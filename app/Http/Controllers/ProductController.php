@@ -36,19 +36,24 @@ class ProductController extends Controller
         // Validate the input data
         $request->validate([
             'name' => 'required|string|max:255',
-            'price' => 'required',
-            'quantity' => 'require',
+            'price' => 'required|numeric|between:0.01,999999.99',
+            'quantity' => 'required|integer|min:1|max:99',
         ]);
-
-        $product = Products::create([
-            'name' => $request->name,
-            'price' => $request->price,
-            'quantity' => $request->quantity,
-
-        ]);
-
-        return response()->json(['message' => 'Product created successfully', 'data' => ProductResource::collection($product)], 201);
-    }
+        try {
+            $product = Products::create([
+                'name' => $request->name,
+                'price' => $request->price,
+                'quantity' => $request->quantity,
+            ]);
+        
+            return new ProductResource($product, 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+           
+            return response()->json(['error' => $e->errors()], 400);
+        } catch (\Exception $e) {
+          
+            return response()->json(['error' => 'Failed to create the product.'], 500);
+        }}
 
     /**
      * Display the specified resource.
